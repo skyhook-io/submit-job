@@ -6,7 +6,7 @@ Submits/triggers Kubernetes CronJobs or Argo Workflows. This action handles the 
 
 ```yaml
 - name: Submit job
-  uses: KoalaOps/submit-job@v1
+  uses: skyhook-io/submit-job@v1
   id: submit
   with:
     job_type: kubernetes-cronjob
@@ -46,7 +46,7 @@ Submits/triggers Kubernetes CronJobs or Argo Workflows. This action handles the 
 
 ```yaml
 - name: Trigger CronJob
-  uses: KoalaOps/submit-job@v1
+  uses: skyhook-io/submit-job@v1
   with:
     job_type: kubernetes-cronjob
     resource_name: nightly-backup
@@ -57,7 +57,7 @@ Submits/triggers Kubernetes CronJobs or Argo Workflows. This action handles the 
 
 ```yaml
 - name: Submit workflow
-  uses: KoalaOps/submit-job@v1
+  uses: skyhook-io/submit-job@v1
   with:
     job_type: argo-workflow
     resource_name: data-processing-template
@@ -69,7 +69,7 @@ Submits/triggers Kubernetes CronJobs or Argo Workflows. This action handles the 
 
 ```yaml
 - name: Submit from CronWorkflow
-  uses: KoalaOps/submit-job@v1
+  uses: skyhook-io/submit-job@v1
   with:
     job_type: argo-cronworkflow
     resource_name: scheduled-report
@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Authenticate to cluster
-        uses: KoalaOps/cloud-login@v1
+        uses: skyhook-io/cloud-login@v1
         with:
           provider: gcp
           account: my-project
@@ -112,7 +112,7 @@ jobs:
 
       - name: Resolve job resource
         id: resolve
-        uses: KoalaOps/resolve-job-template@v1
+        uses: skyhook-io/resolve-job-template@v1
         with:
           job_name: ${{ inputs.job_name }}
           namespace: ${{ inputs.namespace }}
@@ -120,7 +120,7 @@ jobs:
 
       - name: Submit job
         id: submit
-        uses: KoalaOps/submit-job@v1
+        uses: skyhook-io/submit-job@v1
         with:
           job_type: ${{ inputs.job_type }}
           resource_name: ${{ steps.resolve.outputs.name }}

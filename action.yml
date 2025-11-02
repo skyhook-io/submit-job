@@ -1,6 +1,6 @@
 name: 'Submit Job'
 description: 'Submits/triggers Kubernetes CronJobs or Argo Workflows'
-author: 'KoalaOps'
+author: 'Skyhook'
 
 branding:
   icon: 'play'
