@@ -32,6 +32,9 @@ outputs:
   created_kind:
     description: 'Kind of the created resource (job or workflow)'
     value: ${{ steps.execute-cronjob.outputs.kind || steps.execute-argo.outputs.kind }}
+  github_run_id:
+    description: 'GitHub Actions run ID (added as label to the created resource for traceability)'
+    value: ${{ github.run_id }}
 
 runs:
   using: 'composite'
@@ -133,7 +136,10 @@ runs:
         # Create job from cronjob
         kubectl create job "$JNAME" --from=cronjob/"$NAME" -n "$NS"
 
-        echo "✅ Created Job: $JNAME"
+        # Add traceability label linking to GitHub Actions run
+        kubectl label job/"$JNAME" -n "$NS" "github-run-id=$GITHUB_RUN_ID"
+
+        echo "✅ Created Job: $JNAME (github-run-id=$GITHUB_RUN_ID)"
         kubectl describe job/"$JNAME" -n "$NS"
 
         # Set outputs
@@ -165,16 +171,19 @@ runs:
           done < <(jq -r 'to_entries[] | "\(.key)=\(.value|tostring)"' <<<"$PARAMS")
         fi
 
+        # Build labels for traceability
+        LABELS="github-run-id=$GITHUB_RUN_ID"
+
         # Submit workflow based on type
         if [ "$JOB_TYPE" = "argo-cronworkflow" ]; then
-          echo "🚀 Submitting from CronWorkflow/${NAME} in namespace ${NS}"
-          if ! CREATED_JSON=$(argo submit --from "cronwf/${NAME}" -n "${NS}" "${PARAM_FLAGS[@]}" -o json 2>&1); then
+          echo "🚀 Submitting from CronWorkflow/${NAME} in namespace ${NS} (labels: $LABELS)"
+          if ! CREATED_JSON=$(argo submit --from "cronwf/${NAME}" -n "${NS}" --labels "$LABELS" "${PARAM_FLAGS[@]}" -o json 2>&1); then
             echo "::error::Failed to submit workflow: $CREATED_JSON"
             exit 1
           fi
         else
-          echo "🚀 Submitting from WorkflowTemplate/${NAME} in namespace ${NS}"
-          if ! CREATED_JSON=$(argo submit --from "workflowtemplate/${NAME}" -n "${NS}" "${PARAM_FLAGS[@]}" -o json 2>&1); then
+          echo "🚀 Submitting from WorkflowTemplate/${NAME} in namespace ${NS} (labels: $LABELS)"
+          if ! CREATED_JSON=$(argo submit --from "workflowtemplate/${NAME}" -n "${NS}" --labels "$LABELS" "${PARAM_FLAGS[@]}" -o json 2>&1); then
             echo "::error::Failed to submit workflow: $CREATED_JSON"
             exit 1
           fi
@@ -183,7 +192,7 @@ runs:
         # Extract workflow name
         WF_NAME="$(echo "$CREATED_JSON" | jq -r '.metadata.name')"
 
-        echo "✅ Created workflow: ${WF_NAME}"
+        echo "✅ Created workflow: ${WF_NAME} (github-run-id=$GITHUB_RUN_ID)"
         kubectl describe workflow/"${WF_NAME}" -n "${NS}"
 
         # Set outputs
